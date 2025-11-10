@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Inventory Management System</title>
+<style>
+  :root{--bg:#f7fafc;--card:#fff;--accent:#0b74de;--muted:#64748b;--success:#059669;--danger:#dc2626}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans Khmer",Arial; margin:0;background:var(--bg);color:#0f172a}
+  header{background:var(--accent);color:#fff;padding:14px 16px;font-weight:600}
+  .tabs{display:flex;background:#fff;border-bottom:2px solid #e6edf3}
+  .tab{padding:12px 24px;cursor:pointer;border-bottom:3px solid transparent;font-weight:600;transition:all 0.2s}
+  .tab:hover{background:#f8fafc}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);background:#f8fafc}
+  .tab-content{display:none}
+  .tab-content.active{display:block}
+  .container{padding:12px}
+  .card{background:var(--card);border-radius:10px;padding:12px;margin-bottom:12px;box-shadow:0 6px 18px rgba(2,6,23,0.06)}
+  textarea{width:100%;min-height:140px;border:1px solid #e6edf3;border-radius:8px;padding:8px;font-size:14px;resize:vertical}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  button{background:var(--accent);color:#fff;border:0;padding:8px 12px;border-radius:8px;font-weight:600;cursor:pointer}
+  button:hover{opacity:0.9}
+  input[type=file]{display:block}
+  select,input[type=date],input[type=text]{padding:8px;border-radius:8px;border:1px solid #e6edf3;font-size:14px}
+  .pill{background:#eef6ff;padding:8px 10px;border-radius:8px;color:#034e96;font-weight:700}
+  table{width:100%;border-collapse:collapse;margin-top:8px;border:1px solid #e6edf3}
+  thead{display:table-header-group}
+  tbody{display:table-row-group}
+  tr{display:table-row}
+  th,td{display:table-cell;padding:8px;border:1px solid #e6edf3;font-size:13px;text-align:left;white-space:nowrap;min-width:120px}
+  td input{width:100%;border:1px solid #e6edf3;padding:4px;border-radius:4px;box-sizing:border-box;font-size:13px}
+  th{background:#f8fafc;position:sticky;top:0;font-weight:600}
+  th input{width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;box-sizing:border-box}
+  .muted{color:var(--muted);font-size:13px}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .filter-section{background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px}
+  .filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .filter-row label{font-weight:600;min-width:120px}
+  .hidden{display:none!important}
+  .edit-mode td{background:#fffbeb}
+  .btn-edit{background:#0891b2}
+  .btn-save{background:var(--success)}
+  .btn-cancel{background:#6b7280}
+  .btn-export{background:#7c3aed}
+  .btn-reset{background:var(--danger)}
+  .btn-add{background:#059669}
+  .auto-load-indicator{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    background:#059669;
+    color:#fff;
+    padding:12px 20px;
+    border-radius:50px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.3);
+    font-weight:600;
+    z-index:1000;
+    animation:slideIn 0.3s ease-out;
+  }
+  @keyframes slideIn{
+    from{transform:translateX(400px);opacity:0}
+    to{transform:translateX(0);opacity:1}
+  }
+  .auto-load-indicator.hiding{
+    animation:slideOut 0.3s ease-in forwards;
+  }
+  @keyframes slideOut{
+    from{transform:translateX(0);opacity:1}
+    to{transform:translateX(400px);opacity:0}
+  }
+  .modal{display:none;position:fixed;z-index:100;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);overflow:auto}
+  .modal.active{display:flex;align-items:center;justify-content:center}
+  .modal-content{background:#fff;border-radius:12px;padding:20px;max-width:800px;width:90%;max-height:90vh;overflow-y:auto}
+  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #e6edf3}
+  .modal-close{background:#ef4444;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;line-height:1}
+  .form-group{margin-bottom:12px}
+  .form-group label{display:block;font-weight:600;margin-bottom:4px;font-size:14px}
+  .form-group input,.form-group select{width:100%;padding:8px;border:1px solid #e6edf3;border-radius:8px;font-size:14px;box-sizing:border-box}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(min-width:720px){.container{max-width:1400px;margin:18px auto}}
+  @media(max-width:720px){.form-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>Inventory Management System</header>
+
+<!-- Auto-load indicator -->
+<div id="autoLoadIndicator" style="display:none" class="auto-load-indicator">
+  ✅ ទិន្នន័យត្រូវបាន Load ស្វ័យប្រវត្តិ
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="tab3">🏫 ព័ត៌មានសាលា</div>
+  <div class="tab" data-tab="tab1">📦 បញ្ចូលសម្ភារៈ</div>
+  <div class="tab" data-tab="tab2">📤 បញ្ចេញសម្ភារៈ</div>
+</div>
+
+<div class="container">
+  <!-- TAB 3: SCHOOL INFO (FIRST) -->
+  <div id="tab3" class="tab-content active">
+    <div class="card">
+      <div style="text-align:center;margin-bottom:24px;padding:20px;background:linear-gradient(135deg,#0b74de,#059669);color:#fff;border-radius:10px">
+        <h2 style="margin:0;font-size:24px" id="displaySchoolName">សាលាបឋមសិក្សា រោគ</h2>
+        <h3 style="margin:8px 0 0 0;font-size:18px;opacity:0.9">ឆ្នាំថវិកា ២០២៥</h3>
+      </div>
+
+      <div class="card" style="background:#f8fafc;margin-bottom:16px">
+        <h3 style="margin:0 0 16px 0;color:var(--accent);border-bottom:2px solid var(--accent);padding-bottom:8px">📋 អំពីសាលាជាសង្ខេប</h3>
+        <table style="display:table;width:100%;background:#fff">
+          <tr>
+            <td style="padding:12px;font-weight:600;width:35%;background:#f8fafc">លេខកូដ</td>
+            <td style="padding:12px" id="infoCode">010304401017</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;font-weight:600;background:#f8fafc">ឈ្មោះសាលារៀន</td>
+            <td style="padding:12px" id="infoNameKh">សាលាបឋមសិក្សា រោគ</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;font-weight:600;background:#f8fafc">ឈ្មោះជាអក្សរឡាតាំង</td>
+            <td style="padding:12px" id="infoNameEn">Primary School - Rauk</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;font-weight:600;background:#f8fafc">រដ្ឋនីតិ ខេត្ត</td>
+            <td style="padding:12px" id="infoProvince">ខេត្តបន្ទាយមានជ័យ</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;font-weight:600;background:#f8fafc">ក្រុង/ស្រុក/ខណ្ឌ</td>
+            <td style="padding:12px" id="infoDistrict">ស្រុកភ្នំស្រុក</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;font-weight:600;background:#f8fafc">ឃុំ/សង្កាត់</td>
+            <td style="padding:12px" id="infoCommune">ឃុំស្ពានស្រែង</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;font-weight:600;background:#f8fafc">ឆ្នាំថវិកា</td>
+            <td style="padding:12px" id="infoYear">២០២៥</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="background:#e0f2fe;padding:16px;border-radius:8px;border-left:4px solid #0284c7;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:24px">✅</span>
+          <div>
+            <div style="font-weight:700;color:#0369a1">អាចប្រើប្រាស់បានគ្រប់ពេល</div>
+            <div style="font-size:13px;color:#0369a1;margin-top:4px">ព័ត៌មាននេះត្រូវបានរក្សាទុកស្វ័យប្រវត្តិ</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button onclick="editSchoolInfo()" class="btn-edit">✏️ កែប្រែព័ត៌មាន</button>
+        <button onclick="exportSchoolInfo()" class="btn-export">📄 Export ព័ត៌មាន</button>
+        <button onclick="printSchoolInfo()" style="background:#7c3aed">🖨️ Print</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1: INTAKE -->
+  <div id="tab1" class="tab-content">
+    <div class="card" id="inputCard1">
+      <div class="muted">
+        <strong>📂 Import Options:</strong> Paste JSON array, or select file (JSON/CSV/Excel)
+        <br>
+        <span style="color:#059669;font-weight:600">✨ ទិន្នន័យពីមុនត្រូវបាន Load ស្វ័យប្រវត្តិ!</span>
+      </div>
+      <textarea id="paste1" placeholder="Paste JSON array here (UTF-8)"></textarea>
+      <div class="row" style="margin-top:8px">
+        <input id="file1" type="file" accept=".json,.csv,.xlsx,.xls,application/json,text/csv">
+        <button id="process1">Process JSON</button>
+        <button id="importCSV1" style="background:#059669">📄 Import CSV</button>
+        <button id="importExcel1" style="background:#7c3aed">📊 Import Excel</button>
+        <button id="clear1" style="background:#6b7280">Clear</button>
+      </div>
+    </div>
+
+    <div id="resultArea1" class="card" style="display:none">
+      <div class="controls">
+        <div class="pill" id="groupsCount1">Groups: 0</div>
+        <div class="pill" id="itemsCount1">Items: 0</div>
+        <div class="pill" id="grandTotal1">Total: 0 ៛</div>
+        <div class="pill" id="nextReceipt1" style="background:#dcfce7;color:#166534;cursor:pointer" onclick="showNextReceipt1()" title="លេខប័ណ្ណបន្ទាប់">📋 Next: -</div>
+        <button id="addNew1" class="btn-add">➕ បញ្ចូលថ្មី</button>
+        <button id="exportAll1" class="btn-export">Export All</button>
+      </div>
+      
+      <div style="background:#f8fafc;padding:12px;border-radius:8px;margin:12px 0">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <label style="font-weight:600;min-width:80px">🔍 Filter Groups:</label>
+          <input type="text" id="filterGroups1" placeholder="វាយលេខប័ណ្ណដើម្បី Search (ឧ. 015)" style="flex:1;min-width:200px;padding:8px;border:1px solid #cbd5e1;border-radius:6px" oninput="applyGroupFilter1()">
+          <button onclick="clearGroupFilter1()" style="background:#6b7280;padding:8px 16px">Clear</button>
+          <span id="filterStatus1" style="color:#059669;font-weight:600"></span>
+        </div>
+      </div>
+      
+      <div id="groupsContainer1"></div>
+    </div>
+  </div>
+
+  <!-- TAB 2: DISTRIBUTION -->
+  <div id="tab2" class="tab-content">
+    <div class="card" id="inputCard2">
+      <div class="muted">
+        <strong>📂 Import Options:</strong> Paste JSON array, or select file (JSON/CSV/Excel)
+        <br>
+        <span style="color:#059669;font-weight:600">✨ ទិន្នន័យពីមុនត្រូវបាន Load ស្វ័យប្រវត្តិ!</span>
+      </div>
+      <textarea id="paste2" placeholder="Paste JSON array here (UTF-8)"></textarea>
+      <div class="row" style="margin-top:8px">
+        <input id="file2" type="file" accept=".json,.csv,.xlsx,.xls,application/json,text/csv">
+        <button id="process2">Process JSON</button>
+        <button id="importCSV2" style="background:#059669">📄 Import CSV</button>
+        <button id="importExcel2" style="background:#7c3aed">📊 Import Excel</button>
+        <button id="clear2" style="background:#6b7280">Clear</button>
+      </div>
+    </div>
+
+    <div id="resultArea2" class="card" style="display:none">
+      <div class="controls">
+        <div class="pill" id="groupsCount2">Groups: 0</div>
+        <div class="pill" id="itemsCount2">Items: 0</div>
+        <div class="pill" id="grandTotal2">Total: 0 ៛</div>
+        <div class="pill" id="nextReceipt2" style="background:#dcfce7;color:#166534;cursor:pointer" onclick="showNextReceipt2()" title="លេខប័ណ្ណបន្ទាប់">📋 Next: -</div>
+        <button id="addNew2" class="btn-add">➕ បញ្ចេញថ្មី</button>
+        <button id="exportAll2" class="btn-export">Export All</button>
+      </div>
+      
+      <div style="background:#f8fafc;padding:12px;border-radius:8px;margin:12px 0">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <label style="font-weight:600;min-width:80px">🔍 Filter Groups:</label>
+          <input type="text" id="filterGroups2" placeholder="វាយលេខប័ណ្ណដើម្បី Search (ឧ. 015)" style="flex:1;min-width:200px;padding:8px;border:1px solid #cbd5e1;border-radius:6px" oninput="applyGroupFilter2()">
+          <button onclick="clearGroupFilter2()" style="background:#6b7280;padding:8px 16px">Clear</button>
+          <span id="filterStatus2" style="color:#059669;font-weight:600"></span>
+        </div>
+      </div>
+      
+      <div id="groupsContainer2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tab 1 -->
+<div id="modal1" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="margin:0">បញ្ចូលសម្ភារៈថ្មី</h3>
+      <div class="modal-close" onclick="closeModal1()">×</div>
+    </div>
+    <form id="form1" onsubmit="saveNewRecord1(event)">
+      <div class="form-grid">
+        <div class="form-group"><label>លេខរៀង</label><input type="text" name="លេខរៀង" required></div>
+        <div class="form-group"><label>ឈ្មោះសញ្ញា ក្បួន ខ្នាត បរិក្ខារ ទំនិញ</label><input type="text" name="ឈ្មោះសញ្ញា ក្បួន ខ្នាត បរិក្ខារ ទំនិញ" required></div>
+        <div class="form-group"><label>ប្រភេទ</label><select name="ប្រភេទ" required><option value="">-- Select --</option><option value="សម្ភារៈរៀន និងបង្រៀន">សម្ភារៈរៀន និងបង្រៀន</option><option value="កិច្ចដំណើរការរដ្ឋបាល">កិច្ចដំណើរការរដ្ឋបាល</option><option value="ការតែទាំ និងជួសជុលផ្សេងៗ">ការតែទាំ និងជួសជុលផ្សេងៗ</option><option value="ការចូលរៀនដោយសមធម៌និងបង្កាសិស្សនៅបង់">ការចូលរៀនដោយសមធម៌និងបង្កាសិស្សនៅបង់</option><option value="ការកែលម្អបរិស្ថាន និងទីធ្លាកម្សាន្ត">ការកែលម្អបរិស្ថាន និងទីធ្លាកម្សាន្ត</option><option value="អំណោយណិបជីវិត កីឡា ការងារយុវជន និងកុមារ">អំណោយណិបជីវិត កីឡា ការងារយុវជន និងកុមារ</option></select></div>
+        <div class="form-group"><label>ឯកតាគិត</label><input type="text" name="ឯកតាគិត" required></div>
+        <div class="form-group"><label>ចំនួនតាមសក្ខីបត្រ</label><input type="number" name="ចំនួនតាមសក្ខីបត្រ" required></div>
+        <div class="form-group"><label>ចំនួនបញ្ចូលពិតប្រាកដ</label><input type="number" name="ចំនួនបញ្ចូលពិតប្រាកដ" required></div>
+        <div class="form-group"><label>ថ្លៃឯកតា (៛)</label><input type="number" name="ថ្លៃឯកតា" required></div>
+        <div class="form-group"><label>លេខប័ណ្ណបញ្ចូលសម្ភារៈ ទំនិញ</label><input type="text" name="លេខប័ណ្ណបញ្ចូលសម្ភារៈ ទំនិញ" required></div>
+        <div class="form-group"><label>កាលបរិច្ឆេទបញ្ជីបញ្ចូលសម្ភារៈ ទំនិញ</label><input type="date" name="កាលបរិច្ឆេទបញ្ជីបញ្ចូលសម្ភារៈ ទំនិញ" required></div>
+        <div class="form-group"><label>បានទទួលពី</label><input type="text" name="បានទទួលពី"></div>
+        <div class="form-group"><label>តាម (ប្រភេទសក្ខីបត្រដើម)</label><input type="text" name="តាម (ប្រភេទសក្ខីបត្រដើម)"></div>
+        <div class="form-group"><label>លេខសក្ខីបត្រ</label><input type="text" name="លេខសក្ខីបត្រ"></div>
+        <div class="form-group"><label>កាលបរិច្ឆេទវិក្កយបត្រ</label><input type="date" name="កាលបរិច្ឆេទវិក្កយបត្រ"></div>
+        <div class="form-group"><label>អ្នកបញ្ចូល</label><input type="text" name="អ្នកបញ្ចូល"></div>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button type="submit" class="btn-save">រក្សាទុក</button>
+        <button type="button" class="btn-cancel" onclick="closeModal1()">បោះបង់</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Tab 2 -->
+<div id="modal2" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="margin:0">បញ្ចេញសម្ភារៈថ្មី</h3>
+      <div class="modal-close" onclick="closeModal2()">×</div>
+    </div>
+    <form id="form2" onsubmit="saveNewRecord2(event)">
+      <div class="form-grid">
+        <div class="form-group"><label>ល.រ</label><input type="text" name="ល.រ" required></div>
+        <div class="form-group"><label>បរិយាយ</label><input type="text" name="បរិយាយ" required></div>
+        <div class="form-group"><label>ឯកតាគិត</label><input type="text" name="ឯកតាគិត" required></div>
+        <div class="form-group"><label>ចំនួនសំណូមពរ</label><input type="number" name="ចំនួនសំណូមពរ" required></div>
+        <div class="form-group"><label>បញ្ចេញពិត</label><input type="number" name="បញ្ចេញពិត" required></div>
+        <div class="form-group"><label>តម្លៃរាយ (៛)</label><input type="number" name="តម្លៃរាយ" required></div>
+        <div class="form-group"><label>លេខប័ណ្ណបញ្ចេញ</label><input type="text" name="លេខប័ណ្ណបញ្ចេញ" required></div>
+        <div class="form-group"><label>កាលបរិច្ឆេទ</label><input type="date" name="កាលបរិច្ឆេទ" required></div>
+        <div class="form-group"><label>ឈ្មោះ និងផ្នែកប្រើប្រាស់</label><input type="text" name="ឈ្មោះ និងផ្នែកប្រើប្រាស់"></div>
+        <div class="form-group"><label>មុខសញ្ញាប្រើប្រាស់</label><input type="text" name="មុខសញ្ញាប្រើប្រាស់"></div>
+        <div class="form-group"><label>យោងប័ណ្ណ​បញ្ចូល</label><input type="text" name="យោងប័ណ្ណ​បញ្ចូល"></div>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button type="submit" class="btn-save">រក្សាទុក</button>
+        <button type="button" class="btn-cancel" onclick="closeModal2()">បោះបង់</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal School -->
+<div id="modalSchool" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="margin:0">កែប្រែព័ត៌មានសាលា</h3>
+      <div class="modal-close" onclick="closeModalSchool()">×</div>
+    </div>
+    <form id="formSchool" onsubmit="saveSchoolInfo(event)">
+      <div class="form-group"><label>លេខកូដ</label><input type="text" id="schoolCode" required></div>
+      <div class="form-group"><label>ឈ្មោះសាលារៀន (ខ្មែរ)</label><input type="text" id="schoolNameKh" required></div>
+      <div class="form-group"><label>ឈ្មោះជាអក្សរឡាតាំង</label><input type="text" id="schoolNameEn" required></div>
+      <div class="form-group"><label>រដ្ឋនីតិ ខេត្ត</label><input type="text" id="province" required placeholder="ឧ. ខេត្តបន្ទាយមានជ័យ"></div>
+      <div class="form-group"><label>ក្រុង/ស្រុក/ខណ្ឌ</label><input type="text" id="district" required placeholder="ឧ. ស្រុកភ្នំស្រុក"></div>
+      <div class="form-group"><label>ឃុំ/សង្កាត់</label><input type="text" id="commune" required placeholder="ឧ. ឃុំស្ពានស្រែង"></div>
+      <div class="form-group"><label>ឆ្នាំថវិកា</label><input type="text" id="fiscalYear" required placeholder="ឧ. ២០២៥"></div>
+      <div class="row" style="margin-top:16px">
+        <button type="submit" class="btn-save">💾 រក្សាទុក</button>
+        <button type="button" class="btn-cancel" onclick="closeModalSchool()">❌ បោះបង់</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ✅ Import Papa Parse for CSV processing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<!-- ✅ Import SheetJS for Excel processing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- ✅ Import Lodash for data manipulation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+
+<script>
+const sel=s=>document.querySelector(s);
+document.querySelectorAll('.tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));tab.classList.add('active');document.getElementById(tab.dataset.tab).classList.add('active')})});
+
+// Log loaded libraries
+console.log('✅ Papa Parse:', typeof Papa !== 'undefined' ? 'Loaded' : '❌ Not loaded');
+console.log('✅ SheetJS (XLSX):', typeof XLSX !== 'undefined' ? 'Loaded' : '❌ Not loaded');
+console.log('✅ Lodash:', typeof _ !== 'undefined' ? _.VERSION : '❌ Not loaded');
+
+function khToNumber(text){if(text==null)return 0;try{let t=String(text).trim();t=t.replace(/\u17DB/g,'').replace(/[៛₭₭\u00A0\s]/g,'');const kh='០១២៣៤៥៦៧៨៩',en='0123456789';t=t.split('').map(ch=>{const i=kh.indexOf(ch);return i>=0?en[i]:ch}).join('');t=t.replace(/,/g,'').replace(/\u200B/g,'').replace(/[^\d.-]/g,'');if(t==='')return 0;return Number(t)||0}catch(e){return 0}}
+function formatRiel(n){if(!isFinite(n))return '0 ៛';return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,",")+' ៛'}
+function parseDate(dateStr){if(!dateStr)return null;try{const cleaned=String(dateStr).trim();const parts=cleaned.split(/[\/\-]/);if(parts.length===3){const day=parseInt(parts[0]);const monthMap={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};const month=monthMap[parts[1]]!==undefined?monthMap[parts[1]]:parseInt(parts[1])-1;const year=parseInt(parts[2]);if(year&&month>=0&&day){return new Date(year,month,day)}}return new Date(cleaned)}catch(e){return null}}
+function downloadCSV(rows,filename){const csv=rows.map(r=>r.join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
+function saveToStorage(key,data){try{localStorage.setItem(key,JSON.stringify(data))}catch(e){console.error('Storage error:',e)}}
+function loadFromStorage(key){try{const data=localStorage.getItem(key);return data?JSON.parse(data):null}catch(e){console.error('Storage error:',e);return null}}
+function extractNumber(receipt){const match=receipt.match(/\d+/);return match?parseInt(match[0]):0}
+function incrementReceiptNumber(receipt){const match=receipt.match(/^(\D*)(\d+)(\D*)$/);if(!match)return null;const prefix=match[1];const number=match[2];const suffix=match[3];const nextNum=(parseInt(number)+1).toString().padStart(number.length,'0');return prefix+nextNum+suffix}
+
+let allGroups1=[],originalData1=[],filterCache1={},groupFilter1='';
+const COLS1=['លេខរៀង','ឈ្មោះសញ្ញា ក្បួន ខ្នាត បរិក្ខារ ទំនិញ','ប្រភេទ','ឯកតាគិត','ចំនួនតាមសក្ខីបត្រ','ចំនួនបញ្ចូលពិតប្រាកដ','ថ្លៃឯកតា','សរុបទឹកប្រាក់','លេខប័ណ្ណបញ្ចូលសម្ភារៈ ទំនិញ','កាលបរិច្ឆេទបញ្ជីបញ្ចូលសម្ភារៈ ទំនិញ','បានទទួលពី','តាម (ប្រភេទសក្ខីបត្រដើម)','លេខសក្ខីបត្រ','កាលបរិច្ឆេទវិក្កយបត្រ','អ្នកបញ្ចូល'];
+
+function groupByReceipt(items){const groups=new Map();items.forEach(it=>{const key=(it['លេខប័ណ្ណបញ្ចូលសម្ភារៈ ទំនិញ']||'').toString().trim();const amount=khToNumber(it['សរុបទឹកប្រាក់']||0);const qty=Number(it['ចំនួនបញ្ចូលពិតប្រាកដ']||it['ចំនួនតាមសក្ខីបត្រ']||0);if(!groups.has(key))groups.set(key,{key,items:[],total:0,qty:0});const g=groups.get(key);g.items.push(Object.assign({},it,{__amount:amount,__qty:qty}));g.total+=amount;g.qty+=qty});return Array.from(groups.values()).sort((a,b)=>a.key.localeCompare(b.key))}
+
+function applyColumnFilters1(items,gIdx){const filters=filterCache1[gIdx]||{};return items.filter(it=>{for(let col of COLS1){if(filters[col]){const filterVal=filters[col].toLowerCase();const cellVal=String(it[col]||'').toLowerCase();if(!cellVal.includes(filterVal))return false}}return true})}
+
+function renderGroups1(groups){const container=sel('#groupsContainer1');container.innerHTML='';
+  
+  // Apply group filter
+  let filteredGroups=groups;
+  if(groupFilter1.trim()){
+    const searchTerm=groupFilter1.trim().toLowerCase();
+    filteredGroups=groups.filter(g=>g.key.toLowerCase().includes(searchTerm));
+    sel('#filterStatus1').textContent=`បង្ហាញ ${filteredGroups.length}/${groups.length} groups`;
+  }else{
+    // Hide groups before next receipt number
+    const nextReceipt=getNextReceiptNumber1();
+    if(nextReceipt){
+      const nextNum=extractNumber(nextReceipt);
+      filteredGroups=groups.filter(g=>{
+        const gNum=extractNumber(g.key);
+        return gNum>=nextNum;
+      });
+      if(filteredGroups.length<groups.length){
+        sel('#filterStatus1').textContent=`បង្ហាញតែ ${nextReceipt}+ (${filteredGroups.length}/${groups.length})`;
+      }else{
+        sel('#filterStatus1').textContent='';
+      }
+    }else{
+      sel('#filterStatus1').textContent='';
+    }
+  }
+  
+  filteredGroups.forEach((g,idx)=>{
+    const originalIdx=groups.indexOf(g);
+    const groupNum=String(originalIdx+1).padStart(3,'0');
+    const wrapper=document.createElement('div');
+    wrapper.className='card';
+    const isLast=idx===filteredGroups.length-1;
+    wrapper.innerHTML=`
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+<div><div style="font-weight:700;font-size:16px">Group ${groupNum}: <span style="color:#0b74de">${g.key||'(empty)'}</span>${isLast?' <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:4px;font-size:12px">ចុងក្រោយ</span>':''}</div><div class="muted">Items: ${g.items.length} · Qty: ${g.qty} · Sum: ${formatRiel(g.total)}</div></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="toggleView1(${originalIdx})">View</button><button onclick="editGroup1(${originalIdx})" class="btn-edit">Edit</button><button onclick="exportGroup1(${originalIdx})" class="btn-export">Export</button></div>
+</div>
+<div id="details1_${originalIdx}" style="display:${isLast?'block':'none'};margin-top:10px">
+<div style="overflow-x:auto;max-height:500px;overflow-y:auto">
+<table id="table1_${originalIdx}">
+<thead>
+<tr>${COLS1.map(col=>`<th>${col}</th>`).join('')}</tr>
+<tr>${COLS1.map(col=>`<th><input type="text" placeholder="🔍 ${col.substring(0,8)}..." oninput="filterColumn1(${originalIdx},'${col.replace(/'/g,"\\'")}',this.value)"></th>`).join('')}</tr>
+</thead>
+<tbody id="tbody1_${originalIdx}">
+${g.items.map((it,i)=>`<tr data-idx="${i}">${COLS1.map(col=>`<td><span>${it[col]||''}</span></td>`).join('')}</tr>`).join('')}
+</tbody>
+</table>
+</div>
+<div id="actions1_${originalIdx}" style="display:none;margin-top:10px;gap:8px">
+<button onclick="saveGroup1(${originalIdx})" class="btn-save">Save</button>
+<button onclick="cancelEdit1(${originalIdx})" class="btn-cancel">Cancel</button>
+</div>
+</div>`;container.appendChild(wrapper)})
+  
+  if(filteredGroups.length===0){
+    container.innerHTML='<div style="padding:20px;text-align:center;color:#6b7280">មិនមាន Groups ដែលត្រូវគ្នា</div>';
+  }
+}
+
+window.applyGroupFilter1=()=>{
+  groupFilter1=sel('#filterGroups1').value;
+  renderGroups1(allGroups1);
+};
+
+window.clearGroupFilter1=()=>{
+  groupFilter1='';
+  sel('#filterGroups1').value='';
+  renderGroups1(allGroups1);
+};
+
+window.filterColumn1=(gIdx,col,val)=>{if(!filterCache1[gIdx])filterCache1[gIdx]={};filterCache1[gIdx][col]=val;const g=allGroups1[gIdx];if(!g)return;const filtered=applyColumnFilters1(g.items,gIdx);const tbody=sel(`#tbody1_${gIdx}`);if(!tbody)return;tbody.innerHTML=filtered.map(it=>{const originalIdx=g.items.indexOf(it);return `<tr data-idx="${originalIdx}">${COLS1.map(c=>`<td><span>${it[c]||''}</span></td>`).join('')}</tr>`}).join('')};
+
+window.editGroup1=(idx)=>{const tbl=sel(`#table1_${idx}`);const actions=sel(`#actions1_${idx}`);tbl.querySelectorAll('tbody tr').forEach(tr=>{tr.classList.add('edit-mode');tr.querySelectorAll('td').forEach((td,colIdx)=>{const span=td.querySelector('span');if(span){const inp=document.createElement('input');inp.value=span.textContent;inp.style.width='100%';span.style.display='none';td.appendChild(inp)}})});actions.style.display='flex'};
+
+window.saveGroup1=(idx)=>{const tbl=sel(`#table1_${idx}`);const actions=sel(`#actions1_${idx}`);tbl.querySelectorAll('tbody tr').forEach(tr=>{const itemIdx=parseInt(tr.dataset.idx);if(isNaN(itemIdx)||!allGroups1[idx].items[itemIdx])return;tr.classList.remove('edit-mode');tr.querySelectorAll('td').forEach((td,colIdx)=>{const inp=td.querySelector('input');const span=td.querySelector('span');if(inp&&span){const newVal=inp.value;span.textContent=newVal;allGroups1[idx].items[itemIdx][COLS1[colIdx]]=newVal;const originalItem=originalData1.find(item=>item['លេខប័ណ្ណបញ្ចូលសម្ភារៈ ទំនិញ']===allGroups1[idx].key&&item['លេខរៀង']===allGroups1[idx].items[itemIdx]['លេខរៀង']);if(originalItem){originalItem[COLS1[colIdx]]=newVal}inp.remove();span.style.display=''}})});actions.style.display='none';allGroups1=groupByReceipt(originalData1);updateSummary1();saveToStorage('intake_data',originalData1);alert('រក្សាទុករួចរាល់!')};
+
+window.cancelEdit1=(idx)=>{const tbl=sel(`#table1_${idx}`);const actions=sel(`#actions1_${idx}`);tbl.querySelectorAll('input').forEach(inp=>inp.remove());tbl.querySelectorAll('span').forEach(span=>span.style.display='');tbl.querySelectorAll('tr').forEach(tr=>tr.classList.remove('edit-mode'));actions.style.display='none'};
+
+window.toggleView1=(idx)=>{const details=sel(`#details1_${idx}`);details.style.display=details.style.display==='none'?'block':'none'};
+
+window.exportGroup1=(idx)=>{const g=allGroups1[idx];const rows=[COLS1];g.items.forEach(it=>rows.push(COLS1.map(c=>'"'+String(it[c]||'').replace(/"/g,'""')+'"')));downloadCSV(rows,`intake_group_${String(idx+1).padStart(3,'0')}.csv`)};
+
+
+function updateSummary1(){sel('#groupsCount1').textContent='Groups: '+allGroups1.length;sel('#itemsCount1').textContent='Items: '+allGroups1.reduce((s,g)=>s+g.items.length,0);sel('#grandTotal1').textContent='Total: '+formatRiel(allGroups1.reduce((s,g)=>s+g.total,0));const nextReceipt=getNextReceiptNumber1();sel('#nextReceipt1').textContent='📋 Next: '+(nextReceipt||'-')}
+
+function getNextReceiptNumber1(){if(originalData1.length===0)return'001';const receipts=originalData1.map(it=>(it['លេខប័ណ្ណបញ្ចូលសម្ភារៈ ទំនិញ']||'').trim()).filter(r=>r);if(receipts.length===0)return'001';let maxReceipt=receipts[0];let maxNum=extractNumber(maxReceipt);receipts.forEach(r=>{const num=extractNumber(r);if(num>maxNum){maxNum=num;maxReceipt=r}});return incrementReceiptNumber(maxReceipt)}
+
+window.showNextReceipt1=()=>{const nextReceipt=getNextReceiptNumber1();if(!nextReceipt){alert('មិនមានលេខប័ណ្ណបន្ទាប់');return}alert(`លេខប័ណ្ណបន្ទាប់គឺ: ${nextReceipt}\n\nអ្នកអាចចុច "➕ បញ្ចូលថ្មី" ដើម្បីបន្ថែម record ថ្មី`)};
+
+function processData1(data){originalData1=data;allGroups1=groupByReceipt(data);filterCache1={};sel('#inputCard1').classList.add('hidden');sel('#resultArea1').style.display='block';updateSummary1();renderGroups1(allGroups1);saveToStorage('intake_data',data)}
+
+sel('#process1').onclick=()=>{try{const data=JSON.parse(sel('#paste1').value.trim());if(!Array.isArray(data))return alert('Must be array');processData1(data)}catch(e){alert('Invalid JSON: '+e.message)}};
+
+sel('#clear1').onclick=()=>{if(confirm('តើអ្នកចង់លុបទិន្នន័យទាំងអស់មែនទេ?')){sel('#paste1').value='';sel('#resultArea1').style.display='none';sel('#inputCard1').classList.remove('hidden');allGroups1=[];originalData1=[];saveToStorage('intake_data',[])}};
+
+sel('#exportAll1').onclick=()=>{const rows=[['Group','Receipt','Items','Qty','Sum']];allGroups1.forEach((g,i)=>rows.push([`Group ${String(i+1).padStart(3,'0')}`,g.key,g.items.length,g.qty,g.total]));downloadCSV(rows,'intake_summary.csv')};
+
+sel('#file1').onchange=async(e)=>{const f=e.target.files[0];if(f)sel('#paste1').value=await f.text()};
+
+// CSV Import for Tab 1
+sel('#importCSV1').onclick=async()=>{
+  const fileInput=sel('#file1');
+  const file=fileInput.files[0];
+  if(!file){alert('សូមជ្រើសរើសឯកសារសិន!');return}
+  if(!file.name.endsWith('.csv')){alert('សូមជ្រើសរើសឯកសារ CSV!');return}
+  
+  const text=await file.text();
+  Papa.parse(text,{
+    header:true,
+    skipEmptyLines:true,
+    dynamicTyping:false,
+    complete:function(results){
+      if(results.errors.length>0){
+        console.error('CSV Parse Errors:',results.errors);
+      }
+      // Clean headers - remove whitespace
+      const data=results.data.map(row=>{
+        const cleaned={};
+        Object.keys(row).forEach(key=>{
+          const cleanKey=key.trim();
+          cleaned[cleanKey]=row[key];
+        });
+        return cleaned;
+      });
+      console.log('✅ CSV parsed:',data.length,'rows');
+      processData1(data);
+    },
+    error:function(err){
+      alert('កំហុសក្នុងការដំណើរការ CSV: '+err.message);
+    }
+  });
+};
+
+// Excel Import for Tab 1
+sel('#importExcel1').onclick=async()=>{
+  const fileInput=sel('#file1');
+  const file=fileInput.files[0];
+  if(!file){alert('សូមជ្រើសរើសឯកសារសិន!');return}
+  if(!file.name.match(/\.(xlsx|xls)$/i)){alert('សូមជ្រើសរើសឯកសារ Excel (.xlsx ឬ .xls)!');return}
+  
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=new Uint8Array(e.target.result);
+      const workbook=XLSX.read(data,{type:'array'});
+      const firstSheet=workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData=XLSX.utils.sheet_to_json(firstSheet,{raw:false,defval:''});
+      
+      // Clean headers
+      const cleaned=jsonData.map(row=>{
+        const cleanRow={};
+        Object.keys(row).forEach(key=>{
+          const cleanKey=key.trim();
+          cleanRow[cleanKey]=row[key];
+        });
+        return cleanRow;
+      });
+      
+      console.log('✅ Excel parsed:',cleaned.length,'rows from sheet:',workbook.SheetNames[0]);
+      processData1(cleaned);
+    }catch(err){
+      alert('កំហុសក្នុងការដំណើរការ Excel: '+err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+sel('#addNew1').onclick=()=>{sel('#modal1').classList.add('active');const nextReceipt=getNextReceiptNumber1();if(nextReceipt){const receiptInput=sel('#form1 input[name="លេខប័ណ្ណបញ្ចូលសម្ភារៈ ទំនិញ"]');if(receiptInput)receiptInput.value=nextReceipt}};
+
+window.closeModal1=()=>{sel('#modal1').classList.remove('active');sel('#form1').reset()};
+
+window.saveNewRecord1=(e)=>{e.preventDefault();const form=sel('#form1');const formData=new FormData(form);const newRecord={};formData.forEach((value,key)=>{if(key==='ថ្លៃឯកតា'){const price=Number(value);const qty=Number(formData.get('ចំនួនបញ្ចូលពិតប្រាកដ'));newRecord[key]=formatRiel(price);newRecord['សរុបទឹកប្រាក់']=formatRiel(price*qty)}else if(key==='កាលបរិច្ឆេទបញ្ជីបញ្ចូលសម្ភារៈ ទំនិញ'||key==='កាលបរិច្ឆេទវិក្កយបត្រ'){if(value){const d=new Date(value);const day=d.getDate();const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];const month=months[d.getMonth()];const year=d.getFullYear();newRecord[key]=`${day}/${month}/${year}`}else{newRecord[key]=''}}else{newRecord[key]=value}});originalData1.push(newRecord);processData1(originalData1);closeModal1();alert('រក្សាទុករួចរាល់!')};
+
+let allGroups2=[],originalData2=[],filterCache2={},groupFilter2='';
+const COLS2=['ល.រ','បរិយាយ','ឯកតាគិត','ចំនួនសំណូមពរ','បញ្ចេញពិត','តម្លៃរាយ','តម្លៃសរុប','លេខប័ណ្ណបញ្ចេញ','កាលបរិច្ឆេទ','ឈ្មោះ និងផ្នែកប្រើប្រាស់','មុខសញ្ញាប្រើប្រាស់','យោងប័ណ្ណ​បញ្ចូល'];
+
+function groupByDistribution(items){const groups=new Map();items.forEach(it=>{const key=(it['លេខប័ណ្ណបញ្ចេញ']||'').toString().trim();const amount=khToNumber(it['តម្លៃសរុប']||0);const qtyRequested=Number(it['ចំនួនសំណូមពរ']||0);const qtyActual=Number(it['បញ្ចេញពិត']||0);if(!groups.has(key))groups.set(key,{key,items:[],total:0,qtyRequested:0,qtyActual:0});const g=groups.get(key);g.items.push(Object.assign({},it,{__amount:amount,__qtyRequested:qtyRequested,__qtyActual:qtyActual}));g.total+=amount;g.qtyRequested+=qtyRequested;g.qtyActual+=qtyActual});return Array.from(groups.values()).sort((a,b)=>a.key.localeCompare(b.key))}
+
+function applyColumnFilters2(items,gIdx){const filters=filterCache2[gIdx]||{};return items.filter(it=>{for(let col of COLS2){if(filters[col]){const filterVal=filters[col].toLowerCase();const cellVal=String(it[col]||'').toLowerCase();if(!cellVal.includes(filterVal))return false}}return true})}
+
+function renderGroups2(groups){const container=sel('#groupsContainer2');container.innerHTML='';
+  
+  // Apply group filter
+  let filteredGroups=groups;
+  if(groupFilter2.trim()){
+    const searchTerm=groupFilter2.trim().toLowerCase();
+    filteredGroups=groups.filter(g=>g.key.toLowerCase().includes(searchTerm));
+    sel('#filterStatus2').textContent=`បង្ហាញ ${filteredGroups.length}/${groups.length} groups`;
+  }else{
+    // Hide groups before next receipt number
+    const nextReceipt=getNextReceiptNumber2();
+    if(nextReceipt){
+      const nextNum=extractNumber(nextReceipt);
+      filteredGroups=groups.filter(g=>{
+        const gNum=extractNumber(g.key);
+        return gNum>=nextNum;
+      });
+      if(filteredGroups.length<groups.length){
+        sel('#filterStatus2').textContent=`បង្ហាញតែ ${nextReceipt}+ (${filteredGroups.length}/${groups.length})`;
+      }else{
+        sel('#filterStatus2').textContent='';
+      }
+    }else{
+      sel('#filterStatus2').textContent='';
+    }
+  }
+  
+  filteredGroups.forEach((g,idx)=>{
+    const originalIdx=groups.indexOf(g);
+    const groupNum=String(originalIdx+1).padStart(3,'0');
+    const wrapper=document.createElement('div');
+    wrapper.className='card';
+    const isLast=idx===filteredGroups.length-1;
+    wrapper.innerHTML=`
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+<div><div style="font-weight:700;font-size:16px">Group ${groupNum}: <span style="color:#059669">${g.key||'(empty)'}</span>${isLast?' <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:4px;font-size:12px">ចុងក្រោយ</span>':''}</div><div class="muted">Items: ${g.items.length} · សំណូមពរ: ${g.qtyRequested} · បញ្ចេញពិត: ${g.qtyActual} · តម្លៃសរុប: ${formatRiel(g.total)}</div></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="toggleView2(${originalIdx})">View</button><button onclick="editGroup2(${originalIdx})" class="btn-edit">Edit</button><button onclick="exportGroup2(${originalIdx})" class="btn-export">Export</button></div>
+</div>
+<div id="details2_${originalIdx}" style="display:${isLast?'block':'none'};margin-top:10px">
+<div style="overflow-x:auto;max-height:500px;overflow-y:auto">
+<table id="table2_${originalIdx}">
+<thead>
+<tr>${COLS2.map(col=>`<th>${col}</th>`).join('')}</tr>
+<tr>${COLS2.map(col=>`<th><input type="text" placeholder="🔍 ${col.substring(0,8)}..." oninput="filterColumn2(${originalIdx},'${col.replace(/'/g,"\\'")}',this.value)"></th>`).join('')}</tr>
+</thead>
+<tbody id="tbody2_${originalIdx}">
+${g.items.map((it,i)=>`<tr data-idx="${i}">${COLS2.map(col=>`<td><span>${it[col]||''}</span></td>`).join('')}</tr>`).join('')}
+</tbody>
+</table>
+</div>
+<div id="actions2_${originalIdx}" style="display:none;margin-top:10px;gap:8px">
+<button onclick="saveGroup2(${originalIdx})" class="btn-save">Save</button>
+<button onclick="cancelEdit2(${originalIdx})" class="btn-cancel">Cancel</button>
+</div>
+</div>`;container.appendChild(wrapper)})
+  
+  if(filteredGroups.length===0){
+    container.innerHTML='<div style="padding:20px;text-align:center;color:#6b7280">មិនមាន Groups ដែលត្រូវគ្នា</div>';
+  }
+}
+
+window.applyGroupFilter2=()=>{
+  groupFilter2=sel('#filterGroups2').value;
+  renderGroups2(allGroups2);
+};
+
+window.clearGroupFilter2=()=>{
+  groupFilter2='';
+  sel('#filterGroups2').value='';
+  renderGroups2(allGroups2);
+};
+
+window.filterColumn2=(gIdx,col,val)=>{if(!filterCache2[gIdx])filterCache2[gIdx]={};filterCache2[gIdx][col]=val;const g=allGroups2[gIdx];if(!g)return;const filtered=applyColumnFilters2(g.items,gIdx);const tbody=sel(`#tbody2_${gIdx}`);if(!tbody)return;tbody.innerHTML=filtered.map(it=>{const originalIdx=g.items.indexOf(it);return `<tr data-idx="${originalIdx}">${COLS2.map(c=>`<td><span>${it[c]||''}</span></td>`).join('')}</tr>`}).join('')};
+
+window.editGroup2=(idx)=>{const tbl=sel(`#table2_${idx}`);const actions=sel(`#actions2_${idx}`);tbl.querySelectorAll('tbody tr').forEach(tr=>{tr.classList.add('edit-mode');tr.querySelectorAll('td').forEach((td,colIdx)=>{const span=td.querySelector('span');if(span){const inp=document.createElement('input');inp.value=span.textContent;inp.style.width='100%';span.style.display='none';td.appendChild(inp)}})});actions.style.display='flex'};
+
+window.saveGroup2=(idx)=>{const tbl=sel(`#table2_${idx}`);const actions=sel(`#actions2_${idx}`);tbl.querySelectorAll('tbody tr').forEach(tr=>{const itemIdx=parseInt(tr.dataset.idx);if(isNaN(itemIdx)||!allGroups2[idx].items[itemIdx])return;tr.classList.remove('edit-mode');tr.querySelectorAll('td').forEach((td,colIdx)=>{const inp=td.querySelector('input');const span=td.querySelector('span');if(inp&&span){const newVal=inp.value;span.textContent=newVal;allGroups2[idx].items[itemIdx][COLS2[colIdx]]=newVal;const originalItem=originalData2.find(item=>item['លេខប័ណ្ណបញ្ចេញ']===allGroups2[idx].key&&item['ល.រ']===allGroups2[idx].items[itemIdx]['ល.រ']);if(originalItem){originalItem[COLS2[colIdx]]=newVal}inp.remove();span.style.display=''}})});actions.style.display='none';allGroups2=groupByDistribution(originalData2);updateSummary2();saveToStorage('distribution_data',originalData2);alert('រក្សាទុករួចរាល់!')};
+
+window.cancelEdit2=(idx)=>{const tbl=sel(`#table2_${idx}`);const actions=sel(`#actions2_${idx}`);tbl.querySelectorAll('input').forEach(inp=>inp.remove());tbl.querySelectorAll('span').forEach(span=>span.style.display='');tbl.querySelectorAll('tr').forEach(tr=>tr.classList.remove('edit-mode'));actions.style.display='none'};
+
+window.toggleView2=(idx)=>{const details=sel(`#details2_${idx}`);details.style.display=details.style.display==='none'?'block':'none'};
+
+window.exportGroup2=(idx)=>{const g=allGroups2[idx];const rows=[COLS2];g.items.forEach(it=>rows.push(COLS2.map(c=>'"'+String(it[c]||'').replace(/"/g,'""')+'"')));downloadCSV(rows,`distribution_group_${String(idx+1).padStart(3,'0')}.csv`)};
+
+function updateSummary2(){sel('#groupsCount2').textContent='Groups: '+allGroups2.length;sel('#itemsCount2').textContent='Items: '+allGroups2.reduce((s,g)=>s+g.items.length,0);sel('#grandTotal2').textContent='Total: '+formatRiel(allGroups2.reduce((s,g)=>s+g.total,0));const nextReceipt=getNextReceiptNumber2();sel('#nextReceipt2').textContent='📋 Next: '+(nextReceipt||'-')}
+
+function getNextReceiptNumber2(){if(originalData2.length===0)return'001';const receipts=originalData2.map(it=>(it['លេខប័ណ្ណបញ្ចេញ']||'').trim()).filter(r=>r);if(receipts.length===0)return'001';let maxReceipt=receipts[0];let maxNum=extractNumber(maxReceipt);receipts.forEach(r=>{const num=extractNumber(r);if(num>maxNum){maxNum=num;maxReceipt=r}});return incrementReceiptNumber(maxReceipt)}
+
+window.showNextReceipt2=()=>{const nextReceipt=getNextReceiptNumber2();if(!nextReceipt){alert('មិនមានលេខប័ណ្ណបន្ទាប់');return}alert(`លេខប័ណ្ណបន្ទាប់គឺ: ${nextReceipt}\n\nអ្នកអាចចុច "➕ បញ្ចេញថ្មី" ដើម្បីបន្ថែម record ថ្មី`)};
+
+function processData2(data){originalData2=data;allGroups2=groupByDistribution(data);filterCache2={};sel('#inputCard2').classList.add('hidden');sel('#resultArea2').style.display='block';updateSummary2();renderGroups2(allGroups2);saveToStorage('distribution_data',data)}
+
+sel('#process2').onclick=()=>{try{const data=JSON.parse(sel('#paste2').value.trim());if(!Array.isArray(data))return alert('Must be array');processData2(data)}catch(e){alert('Invalid JSON: '+e.message)}};
+
+sel('#clear2').onclick=()=>{if(confirm('តើអ្នកចង់លុបទិន្នន័យទាំងអស់មែនទេ?')){sel('#paste2').value='';sel('#resultArea2').style.display='none';sel('#inputCard2').classList.remove('hidden');allGroups2=[];originalData2=[];saveToStorage('distribution_data',[])}};
+
+sel('#exportAll2').onclick=()=>{const rows=[['Group','Receipt','Items','Requested','Actual','Total']];allGroups2.forEach((g,i)=>rows.push([`Group ${String(i+1).padStart(3,'0')}`,g.key,g.items.length,g.qtyRequested,g.qtyActual,g.total]));downloadCSV(rows,'distribution_summary.csv')};
+
+sel('#file2').onchange=async(e)=>{const f=e.target.files[0];if(f)sel('#paste2').value=await f.text()};
+
+// CSV Import for Tab 2
+sel('#importCSV2').onclick=async()=>{
+  const fileInput=sel('#file2');
+  const file=fileInput.files[0];
+  if(!file){alert('សូមជ្រើសរើសឯកសារសិន!');return}
+  if(!file.name.endsWith('.csv')){alert('សូមជ្រើសរើសឯកសារ CSV!');return}
+  
+  const text=await file.text();
+  Papa.parse(text,{
+    header:true,
+    skipEmptyLines:true,
+    dynamicTyping:false,
+    complete:function(results){
+      if(results.errors.length>0){
+        console.error('CSV Parse Errors:',results.errors);
+      }
+      const data=results.data.map(row=>{
+        const cleaned={};
+        Object.keys(row).forEach(key=>{
+          const cleanKey=key.trim();
+          cleaned[cleanKey]=row[key];
+        });
+        return cleaned;
+      });
+      console.log('✅ CSV parsed:',data.length,'rows');
+      processData2(data);
+    },
+    error:function(err){
+      alert('កំហុសក្នុងការដំណើរការ CSV: '+err.message);
+    }
+  });
+};
+
+// Excel Import for Tab 2
+sel('#importExcel2').onclick=async()=>{
+  const fileInput=sel('#file2');
+  const file=fileInput.files[0];
+  if(!file){alert('សូមជ្រើសរើសឯកសារសិន!');return}
+  if(!file.name.match(/\.(xlsx|xls)$/i)){alert('សូមជ្រើសរើសឯកសារ Excel (.xlsx ឬ .xls)!');return}
+  
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=new Uint8Array(e.target.result);
+      const workbook=XLSX.read(data,{type:'array'});
+      const firstSheet=workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData=XLSX.utils.sheet_to_json(firstSheet,{raw:false,defval:''});
+      
+      const cleaned=jsonData.map(row=>{
+        const cleanRow={};
+        Object.keys(row).forEach(key=>{
+          const cleanKey=key.trim();
+          cleanRow[cleanKey]=row[key];
+        });
+        return cleanRow;
+      });
+      
+      console.log('✅ Excel parsed:',cleaned.length,'rows from sheet:',workbook.SheetNames[0]);
+      processData2(cleaned);
+    }catch(err){
+      alert('កំហុសក្នុងការដំណើរការ Excel: '+err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+sel('#addNew2').onclick=()=>{sel('#modal2').classList.add('active');const nextReceipt=getNextReceiptNumber2();if(nextReceipt){const receiptInput=sel('#form2 input[name="លេខប័ណ្ណបញ្ចេញ"]');if(receiptInput)receiptInput.value=nextReceipt}};
+
+window.closeModal2=()=>{sel('#modal2').classList.remove('active');sel('#form2').reset()};
+
+window.saveNewRecord2=(e)=>{e.preventDefault();const form=sel('#form2');const formData=new FormData(form);const newRecord={};formData.forEach((value,key)=>{if(key==='តម្លៃរាយ'){const price=Number(value);const qty=Number(formData.get('បញ្ចេញពិត'));newRecord[key]=formatRiel(price);newRecord['តម្លៃសរុប']=formatRiel(price*qty)}else if(key==='កាលបរិច្ឆេទ'){if(value){const d=new Date(value);const day=d.getDate();const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];const month=months[d.getMonth()];const year=d.getFullYear();newRecord[key]=`${day}/${month}/${year}`}else{newRecord[key]=''}}else{newRecord[key]=value}});originalData2.push(newRecord);processData2(originalData2);closeModal2();alert('រក្សាទុករួចរាល់!')};
+
+let schoolInfo={schoolCode:'010304401017',schoolNameKh:'សាលាបឋមសិក្សា រោគ',schoolNameEn:'Primary School - Rauk',province:'ខេត្តបន្ទាយមានជ័យ',district:'ស្រុកភ្នំស្រុក',commune:'ឃុំស្ពានស្រែង',fiscalYear:'២០២៥'};
+
+function loadSchoolInfo(){const saved=loadFromStorage('school_info');if(saved)schoolInfo=saved;sel('#infoCode').textContent=schoolInfo.schoolCode;sel('#infoNameKh').textContent=schoolInfo.schoolNameKh;sel('#infoNameEn').textContent=schoolInfo.schoolNameEn;sel('#infoProvince').textContent=schoolInfo.province;sel('#infoDistrict').textContent=schoolInfo.district;sel('#infoCommune').textContent=schoolInfo.commune;sel('#infoYear').textContent=schoolInfo.fiscalYear||'២០២៥';sel('#displaySchoolName').textContent=schoolInfo.schoolNameKh}
+
+window.editSchoolInfo=()=>{sel('#modalSchool').classList.add('active');sel('#schoolCode').value=schoolInfo.schoolCode;sel('#schoolNameKh').value=schoolInfo.schoolNameKh;sel('#schoolNameEn').value=schoolInfo.schoolNameEn;sel('#province').value=schoolInfo.province;sel('#district').value=schoolInfo.district;sel('#commune').value=schoolInfo.commune;sel('#fiscalYear').value=schoolInfo.fiscalYear||'២០២៥'};
+
+window.closeModalSchool=()=>{sel('#modalSchool').classList.remove('active')};
+
+window.saveSchoolInfo=(e)=>{e.preventDefault();schoolInfo={schoolCode:sel('#schoolCode').value,schoolNameKh:sel('#schoolNameKh').value,schoolNameEn:sel('#schoolNameEn').value,province:sel('#province').value,district:sel('#district').value,commune:sel('#commune').value,fiscalYear:sel('#fiscalYear').value};saveToStorage('school_info',schoolInfo);loadSchoolInfo();closeModalSchool();alert('✅ រក្សាទុករួចរាល់!')};
+
+window.exportSchoolInfo=()=>{const text=`${schoolInfo.schoolNameKh}\nឆ្នាំថវិកា ${schoolInfo.fiscalYear}\n\nអំពីសាលាជាសង្ខេប:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nលេខកូដ: ${schoolInfo.schoolCode}\nឈ្មោះសាលារៀន: ${schoolInfo.schoolNameKh}\nឈ្មោះជាអក្សរឡាតាំង: ${schoolInfo.schoolNameEn}\nរដ្ឋនីតិ ខេត្ត: ${schoolInfo.province}\nក្រុង/ស្រុក/ខណ្ឌ: ${schoolInfo.district}\nឃុំ/សង្កាត់: ${schoolInfo.commune}\nឆ្នាំថវិកា: ${schoolInfo.fiscalYear}\n\n✅ អាចប្រើប្រាស់បានគ្រប់ពេល\n`;const blob=new Blob([text],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='school_info_'+schoolInfo.schoolCode+'.txt';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);alert('📄 Export រួចរាល់!')};
+
+window.printSchoolInfo=()=>{const printWindow=window.open('','_blank');printWindow.document.write(`
+<html><head><meta charset="utf-8"><title>ព័ត៌មានសាលា</title>
+<style>body{font-family:"Noto Sans Khmer",Arial;padding:40px;max-width:800px;margin:0 auto}h1,h2{text-align:center;color:#0b74de}table{width:100%;border-collapse:collapse;margin:20px 0}td{padding:12px;border:1px solid #ddd}td:first-child{background:#f8fafc;font-weight:600;width:40%}.footer{margin-top:30px;padding:15px;background:#e0f2fe;border-radius:8px;text-align:center}</style>
+</head><body>
+<h1>${schoolInfo.schoolNameKh}</h1>
+<h2>ឆ្នាំថវិកា ${schoolInfo.fiscalYear}</h2>
+<h3>អំពីសាលាជាសង្ខេប</h3>
+<table>
+<tr><td>លេខកូដ</td><td>${schoolInfo.schoolCode}</td></tr>
+<tr><td>ឈ្មោះសាលារៀន</td><td>${schoolInfo.schoolNameKh}</td></tr>
+<tr><td>ឈ្មោះជាអក្សរឡាតាំង</td><td>${schoolInfo.schoolNameEn}</td></tr>
+<tr><td>រដ្ឋនីតិ ខេត្ត</td><td>${schoolInfo.province}</td></tr>
+<tr><td>ក្រុង/ស្រុក/ខណ្ឌ</td><td>${schoolInfo.district}</td></tr>
+<tr><td>ឃុំ/សង្កាត់</td><td>${schoolInfo.commune}</td></tr>
+<tr><td>ឆ្នាំថវិកា</td><td>${schoolInfo.fiscalYear}</td></tr>
+</table>
+<div class="footer">✅ អាចប្រើប្រាស់បានគ្រប់ពេល</div>
+</body></html>
+`);printWindow.document.close();setTimeout(()=>printWindow.print(),250)};
+
+window.addEventListener('DOMContentLoaded',()=>{
+  let autoLoaded=false;
+  
+  // Auto-load Tab 1 data
+  const savedIntake=loadFromStorage('intake_data');
+  if(savedIntake&&savedIntake.length>0){
+    sel('#paste1').value=JSON.stringify(savedIntake,null,2);
+    processData1(savedIntake);
+    autoLoaded=true;
+    console.log('✅ Auto-loaded Tab 1:',savedIntake.length,'records');
+  }
+  
+  // Auto-load Tab 2 data
+  const savedDistribution=loadFromStorage('distribution_data');
+  if(savedDistribution&&savedDistribution.length>0){
+    sel('#paste2').value=JSON.stringify(savedDistribution,null,2);
+    processData2(savedDistribution);
+    autoLoaded=true;
+    console.log('✅ Auto-loaded Tab 2:',savedDistribution.length,'records');
+  }
+  
+  // Load school info
+  loadSchoolInfo();
+  
+  // Show auto-load indicator
+  if(autoLoaded){
+    const indicator=sel('#autoLoadIndicator');
+    indicator.style.display='block';
+    setTimeout(()=>{
+      indicator.classList.add('hiding');
+      setTimeout(()=>{
+        indicator.style.display='none';
+        indicator.classList.remove('hiding');
+      },300);
+    },3000);
+  }
+  
+  console.log('🚀 System ready! Libraries loaded:');
+  console.log('  - Papa Parse:',typeof Papa!=='undefined'?'✅':'❌');
+  console.log('  - SheetJS:',typeof XLSX!=='undefined'?'✅':'❌');
+  console.log('  - Lodash:',typeof _!=='undefined'?_.VERSION:'❌');
+});
+</script>
+</body>
+</html>
