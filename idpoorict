@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ប្រព័ន្ធគ្រប់គ្រងប័ណ្ណសមធម៌</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+```
+body { 
+  font-family: 'Khmer OS Battambang', 'Khmer OS', Arial, sans-serif; 
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.header {
+  background: white;
+  padding: 25px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.header h1 {
+  color: #1e3c72;
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+button {
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.btn-add { background: #10b981; color: white; }
+.btn-export { background: #3b82f6; color: white; }
+.btn-print { background: #8b5cf6; color: white; }
+.btn-stats { background: #f59e0b; color: white; }
+.btn-edit { background: #10b981; color: white; padding: 6px 12px; font-size: 12px; }
+.btn-delete { background: #ef4444; color: white; padding: 6px 12px; font-size: 12px; }
+
+.search-section {
+  background: white;
+  padding: 20px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  margin-bottom: 20px;
+}
+
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.search-item label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.search-item input,
+.search-item select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.search-item input:focus,
+.search-item select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.table-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th {
+  background: #1e3c72;
+  color: white;
+  padding: 12px 10px;
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+td {
+  padding: 10px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 13px;
+}
+
+tbody tr:hover {
+  background: #f9fafb;
+}
+
+.action-cell {
+  display: flex;
+  gap: 5px;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  overflow-y: auto;
+}
+
+.modal-dialog {
+  max-width: 900px;
+  margin: 30px auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+  padding: 20px 30px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fafb;
+}
+
+.modal-header h3 {
+  color: #1f2937;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: #ef4444;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 30px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.form-group {
+  margin-bottom: 0;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.modal-footer {
+  padding: 20px 30px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: #f9fafb;
+}
+
+.btn-save {
+  background: #3b82f6;
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.btn-cancel {
+  background: #6b7280;
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.stat-card h4 {
+  font-size: 14px;
+  margin-bottom: 10px;
+  opacity: 0.9;
+}
+
+.stat-card .number {
+  font-size: 36px;
+  font-weight: bold;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+  font-size: 16px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+@media print {
+  body { background: white; padding: 0; }
+  .header .btn-group, .search-section, .action-cell { display: none !important; }
+  .table-wrapper { max-height: none; }
+}
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .btn-group {
+    width: 100%;
+  }
+  .btn-group button {
+    flex: 1;
+  }
+}
+```
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎫 ប្រព័ន្ធគ្រប់គ្រងប័ណ្ណសមធម៌</h1>
+      <div class="btn-group">
+        <button class="btn-add" onclick="openAddModal()">➕ បន្ថែមថ្មី</button>
+        <button class="btn-export" onclick="exportToCSV()">📊 Export</button>
+        <button class="btn-print" onclick="window.print()">🖨️ Print</button>
+        <button class="btn-stats" onclick="showStats()">📈 ស្ថិតិ</button>
+      </div>
+    </div>
+
+```
+<div class="search-section">
+  <div class="search-grid">
+    <div class="search-item">
+      <label>🔍 ស្វែងរកតាមឈ្មោះ</label>
+      <input type="text" id="searchName" placeholder="គោត្តនាម-នាម..." oninput="filterTable()">
+    </div>
+    <div class="search-item">
+      <label>📚 ថ្នាក់ទី (ថ្មី)</label>
+      <select id="searchGrade" onchange="filterTable()">
+        <option value="">ទាំងអស់</option>
+      </select>
+    </div>
+    <div class="search-item">
+      <label>🏫 ឈ្មោះសាលា (ថ្មី)</label>
+      <select id="searchSchool" onchange="filterTable()">
+        <option value="">ទាំងអស់</option>
+      </select>
+    </div>
+    <div class="search-item">
+      <label>🌍 រាជធានី/ខេត្ត</label>
+      <select id="searchProvince" onchange="filterTable()">
+        <option value="">ទាំងអស់</option>
+      </select>
+    </div>
+    <div class="search-item">
+      <label>📍 បច្ចុប្បន្នភាព</label>
+      <select id="searchStatus" onchange="filterTable()">
+        <option value="">ទាំងអស់</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="table-section">
+  <div class="table-wrapper">
+    <div id="tableContent" class="loading">⏳ កំពុងទាញទិន្នន័យ...</div>
+  </div>
+</div>
+```
+
+  </div>
+
+  <div id="editModal" class="modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modalTitle">✏️ កែប្រែទិន្នន័យ</h3>
+        <button class="close-btn" onclick="closeModal()">✖ បិទ</button>
+      </div>
+      <div class="modal-body">
+        <div id="formContainer"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">បោះបង់</button>
+        <button class="btn-save" onclick="submitForm()">💾 រក្សាទុក</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="statsModal" class="modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📈 របាយការណ៍ស្ថិតិ</h3>
+        <button class="close-btn" onclick="closeStatsModal()">✖ បិទ</button>
+      </div>
+      <div class="modal-body" id="statsContent"></div>
+    </div>
+  </div>
+
+  <script>
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbx6pxDzhcjJqavOuaD5ObLgfe8POpqWRjIB_g9FQOmpxIhRTftWe2wAFE-tJOfjqmZNEA/exec";
+    
+    let columns = [];
+    let allData = [];
+    let filteredData = [];
+    let editingRowIndex = null;
+
+    loadData();
+
+    function loadData() {
+      document.getElementById("tableContent").innerHTML = '<div class="loading">⏳ កំពុងទាញទិន្នន័យ...</div>';
+      
+      fetch(webAppUrl)
+        .then(res => {
+          if (!res.ok) throw new Error("Network error");
+          return res.json();
+        })
+        .then(data => {
+          if (data.length > 0) {
+            allData = data;
+            filteredData = data;
+            columns = Object.keys(data[0]);
+            populateFilters();
+            renderTable(allData);
+          } else {
+            document.getElementById("tableContent").innerHTML = `
+              <div class="empty-state">
+                <h3>📭 មិនមានទិន្នន័យ</h3>
+                <p>សូមចុចប៊ូតុង "បន្ថែមថ្មី" ដើម្បីបន្ថែមទិន្នន័យ</p>
+              </div>`;
+          }
+        })
+        .catch(err => {
+          document.getElementById("tableContent").innerHTML = `
+            <div class="empty-state">
+              <h3>❌ មិនអាចទាញទិន្នន័យបាន</h3>
+              <p>${err.message}</p>
+              <p><small>សូមពិនិត្យ Web App URL</small></p>
+            </div>`;
+        });
+    }
+
+    function populateFilters() {
+      const grades = [...new Set(allData.map(row => String(row["ថ្នាក់ទី (ថ្មី)"] || "")).filter(Boolean))];
+      grades.sort((a, b) => {
+        if (a === "មត្តេយ្យ") return 1;
+        if (b === "មត្តេយ្យ") return -1;
+        return Number(a) - Number(b);
+      });
+      const gradeSelect = document.getElementById("searchGrade");
+      gradeSelect.innerHTML = '<option value="">ទាំងអស់</option>';
+      grades.forEach(grade => {
+        gradeSelect.innerHTML += `<option value="${grade}">${grade}</option>`;
+      });
+
+      const schools = [...new Set(allData.map(row => row["ឈ្មោះសាលា (ថ្មី)"] || "").filter(Boolean))];
+      const schoolSelect = document.getElementById("searchSchool");
+      schoolSelect.innerHTML = '<option value="">ទាំងអស់</option>';
+      schools.forEach(school => {
+        schoolSelect.innerHTML += `<option value="${school}">${school}</option>`;
+      });
+
+      const provinces = [...new Set(allData.map(row => row["រាជធានី/ខេត្ត"] || "").filter(Boolean))];
+      const provinceSelect = document.getElementById("searchProvince");
+      provinceSelect.innerHTML = '<option value="">ទាំងអស់</option>';
+      provinces.forEach(province => {
+        provinceSelect.innerHTML += `<option value="${province}">${province}</option>`;
+      });
+
+      const statuses = [...new Set(allData.map(row => row["បច្ចុប្បន្នភាព"] || "").filter(Boolean))];
+      const statusSelect = document.getElementById("searchStatus");
+      statusSelect.innerHTML = '<option value="">ទាំងអស់</option>';
+      statuses.forEach(status => {
+        statusSelect.innerHTML += `<option value="${status}">${status}</option>`;
+      });
+    }
+
+    function filterTable() {
+      const nameKeyword = document.getElementById("searchName").value.toLowerCase();
+      const gradeFilter = document.getElementById("searchGrade").value;
+      const schoolFilter = document.getElementById("searchSchool").value;
+      const provinceFilter = document.getElementById("searchProvince").value;
+      const statusFilter = document.getElementById("searchStatus").value;
+
+      filteredData = allData.filter(row => {
+        const name = (row["គោត្តនាម-នាម"] || "").toLowerCase();
+        const grade = String(row["ថ្នាក់ទី (ថ្មី)"] || "");
+        const school = row["ឈ្មោះសាលា (ថ្មី)"] || "";
+        const province = row["រាជធានី/ខេត្ត"] || "";
+        const status = row["បច្ចុប្បន្នភាព"] || "";
+
+        return name.includes(nameKeyword) &&
+               (!gradeFilter || grade === gradeFilter) &&
+               (!schoolFilter || school === schoolFilter) &&
+               (!provinceFilter || province === provinceFilter) &&
+               (!statusFilter || status === statusFilter);
+      });
+
+      renderTable(filteredData);
+    }
+
+    function renderTable(data) {
+      if (data.length === 0) {
+        document.getElementById("tableContent").innerHTML = `
+          <div class="empty-state">
+            <h3>🔍 រកមិនឃើញ</h3>
+            <p>គ្មានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌស្វែងរក</p>
+          </div>`;
+        return;
+      }
+
+      let html = "<table><thead><tr><th>សកម្មភាព</th>";
+      columns.forEach(col => html += `<th>${col}</th>`);
+      html += "</tr></thead><tbody>";
+
+      data.forEach(row => {
+        const originalIndex = allData.indexOf(row);
+        html += "<tr><td><div class='action-cell'>";
+        html += `<button class="btn-edit" onclick="openEditModal(${originalIndex})">✏️ កែ</button>`;
+        html += `<button class="btn-delete" onclick="deleteStudent(${originalIndex})">🗑️</button>`;
+        html += "</div></td>";
+        columns.forEach(col => html += `<td>${row[col] || ""}</td>`);
+        html += "</tr>";
+      });
+
+      html += "</tbody></table>";
+      document.getElementById("tableContent").innerHTML = html;
+    }
+
+    function openEditModal(index) {
+      editingRowIndex = index;
+      const row = allData[index];
+      
+      let formHTML = '<div class="form-grid">';
+      
+      columns.forEach(col => {
+        const value = row[col] || "";
+        const isGrade = col.includes("ថ្នាក់ទី");
+        const isGender = col === "ភេទ";
+        const isStatus = col === "បច្ចុប្បន្នភាព";
+        
+        let fieldClass = "form-group";
+        if (col === "គោត្តនាម-នាម" || col.includes("ឈ្មោះសាលា")) {
+          fieldClass += " full-width";
+        }
+        
+        formHTML += `<div class="${fieldClass}"><label>${col}</label>`;
+        
+        if (isGrade) {
+          formHTML += `<select name="${col}">
+            <option value="">ជ្រើសរើស</option>
+            <option value="មត្តេយ្យ" ${value === "មត្តេយ្យ" ? "selected" : ""}>មត្តេយ្យ</option>`;
+          for (let i = 1; i <= 12; i++) {
+            formHTML += `<option value="${i}" ${String(value) === String(i) ? "selected" : ""}>${i}</option>`;
+          }
+          formHTML += `</select>`;
+        } else if (isGender) {
+          formHTML += `<select name="${col}">
+            <option value="">ជ្រើសរើស</option>
+            <option value="ប្រុស" ${value === "ប្រុស" ? "selected" : ""}>ប្រុស</option>
+            <option value="ស្រី" ${value === "ស្រី" ? "selected" : ""}>ស្រី</option>
+          </select>`;
+        } else if (isStatus) {
+          formHTML += `<select name="${col}">
+            <option value="">ជ្រើសរើស</option>
+            <option value="កំពុងសិក្សា" ${value === "កំពុងសិក្សា" ? "selected" : ""}>កំពុងសិក្សា</option>
+            <option value="បានបញ្ចប់" ${value === "បានបញ្ចប់" ? "selected" : ""}>បានបញ្ចប់</option>
+            <option value="បោះបង់" ${value === "បោះបង់" ? "selected" : ""}>បោះបង់</option>
+          </select>`;
+        } else {
+          formHTML += `<input type="text" name="${col}" value="${value}">`;
+        }
+        
+        formHTML += `</div>`;
+      });
+      
+      formHTML += '</div>';
+      document.getElementById("formContainer").innerHTML = formHTML;
+      document.getElementById("modalTitle").textContent = "✏️ កែប្រែទិន្នន័យ";
+      document.getElementById("editModal").style.display = "block";
+    }
+
+    function openAddModal() {
+      editingRowIndex = null;
+      
+      let formHTML = '<div class="form-grid">';
+      
+      columns.forEach(col => {
+        const isGrade = col.includes("ថ្នាក់ទី");
+        const isGender = col === "ភេទ";
+        const isStatus = col === "បច្ចុប្បន្នភាព";
+        
+        let fieldClass = "form-group";
+        if (col === "គោត្តនាម-នាម" || col.includes("ឈ្មោះសាលា")) {
+          fieldClass += " full-width";
+        }
+        
+        formHTML += `<div class="${fieldClass}"><label>${col}</label>`;
+        
+        if (isGrade) {
+          formHTML += `<select name="${col}">
+            <option value="">ជ្រើសរើស</option>
+            <option value="មត្តេយ្យ">មត្តេយ្យ</option>`;
+          for (let i = 1; i <= 12; i++) {
+            formHTML += `<option value="${i}">${i}</option>`;
+          }
+          formHTML += `</select>`;
+        } else if (isGender) {
+          formHTML += `<select name="${col}">
+            <option value="">ជ្រើសរើស</option>
+            <option value="ប្រុស">ប្រុស</option>
+            <option value="ស្រី">ស្រី</option>
+          </select>`;
+        } else if (isStatus) {
+          formHTML += `<select name="${col}">
+            <option value="">ជ្រើសរើស</option>
+            <option value="កំពុងសិក្សា">កំពុងសិក្សា</option>
+            <option value="បានបញ្ចប់">បានបញ្ចប់</option>
+            <option value="បោះបង់">បោះបង់</option>
+          </select>`;
+        } else {
+          formHTML += `<input type="text" name="${col}" placeholder="បញ្ចូល ${col}">`;
+        }
+        
+        formHTML += `</div>`;
+      });
+      
+      formHTML += '</div>';
+      document.getElementById("formContainer").innerHTML = formHTML;
+      document.getElementById("modalTitle").textContent = "➕ បន្ថែមទិន្នន័យថ្មី";
+      document.getElementById("editModal").style.display = "block";
+    }
+
+    function closeModal() {
+      document.getElementById("editModal").style.display = "none";
+      editingRowIndex = null;
+    }
+
+    function submitForm() {
+      const inputs = document.querySelectorAll("#formContainer input, #formContainer select");
+      const payload = {};
+      
+      inputs.forEach(input => {
+        payload[input.name] = input.value.trim();
+      });
+
+      if (editingRowIndex !== null) {
+        payload.rowIndex = editingRowIndex + 2;
+        payload.isEdit = true;
+      }
+
+      fetch(webAppUrl, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.text())
+      .then(msg => {
+        alert(msg);
+        closeModal();
+        loadData();
+      })
+      .catch(err => alert("❌ កំហុស: " + err.message));
+    }
+
+    function deleteStudent(index) {
+      const row = allData[index];
+      const name = row["គោត្តនាម-នាម"] || "";
+      
+      if (!confirm(`តើអ្នកប្រាកដថាចង់លុប "${name}" មែនទេ?`)) return;
+
+      fetch(webAppUrl, {
+        method: "POST",
+        body: JSON.stringify({
+          isDelete: true,
+          rowIndex: index + 2
+        })
+      })
+      .then(res => res.text())
+      .then(msg => {
+        alert(msg);
+        loadData();
+      })
+      .catch(err => alert("❌ កំហុស: " + err.message));
+    }
+
+    function exportToCSV() {
+      let csv = "\ufeff" + columns.join(",") + "\n";
+      filteredData.forEach(row => {
+        csv += columns.map(col => `"${row[col] || ""}"`).join(",") + "\n";
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `equity_cards_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+    }
+
+    function showStats() {
+      const total = allData.length;
+      const gradeStats = {};
+      const statusStats = {};
+      const provinceStats = {};
+      const genderStats = {};
+
+      allData.forEach(row => {
+        const grade = String(row["ថ្នាក់ទី (ថ្មី)"] || "N/A");
+        const status = row["បច្ចុប្បន្នភាព"] || "N/A";
+        const province = row["រាជធានី/ខេត្ត"] || "N/A";
+        const gender = row["ភេទ"] || "N/A";
+        
+        gradeStats[grade] = (gradeStats[grade] || 0) + 1;
+        statusStats[status] = (statusStats[status] || 0) + 1;
+        provinceStats[province] = (provinceStats[province] || 0) + 1;
+        genderStats[gender] = (genderStats[gender] || 0) + 1;
+      });
+
+      let html = `<h3 style="margin-bottom:15px;">📊 សរុប</h3><div class="stats-grid">
+        <div class="stat-card"><h4>សរុបទាំងអស់</h4><div class="number">${total}</div></div>`;
+
+      Object.entries(genderStats).forEach(([gender, count]) => {
+        html += `<div class="stat-card"><h4>${gender}</h4><div class="number">${count}</div></div>`;
+      });
+
+      html += `</div><br><h3 style="margin-bottom:15px;">📚 តាមថ្នាក់</h3><div class="stats-grid">`;
+      Object.entries(gradeStats).forEach(([grade, count]) => {
+        html += `<div class="stat-card"><h4>ថ្នាក់ទី ${grade}</h4><div class="number">${count}</div></div>`;
+      });
+
+      html += `</div><br><h3 style="margin-bottom:15px;">📍 តាមបច្ចុប្បន្នភាព</h3><div class="stats-grid">`;
+      Object.entries(statusStats).forEach(([status, count]) => {
+        html += `<div class="stat-card"><h4>${status}</h4><div class="number">${count}</div></div>`;
+      });
+
+      html += `</div><br><h3 style="margin-bottom:15px;">🌍 តាមរាជធានី/ខេត្ត</h3><div class="stats-grid">`;
+      Object.entries(provinceStats).forEach(([province, count]) => {
+        html += `<div class="stat-card"><h4>${province}</h4><div class="number">${count}</div></div>`;
+      });
+
+      html += `</div>`;
+      
+      document.getElementById("statsContent").innerHTML = html;
+      document.getElementById("statsModal").style.display = "block";
+    }
+
+    function closeStatsModal() {
+      document.getElementById("statsModal").style.display = "none";
+    }
+
+    window.onclick = function(event) {
+      if (event.target.className === 'modal') {
+        event.target.style.display = "none";
+      }
+    }
+  </script>
+
+</body>
+</html>
