@@ -1,0 +1,648 @@
+import React, { useState, useEffect } from 'react';
+import { FileText, Plus, Search, Eye, Edit, Trash2, Download, Menu, Home, Users, BarChart3, Settings, Clock, DollarSign, ShoppingCart, TrendingUp, Calendar, User } from 'lucide-react';
+
+const InvoiceSystem = () => {
+  const [activeMenu, setActiveMenu] = useState('home');
+  const [invoices, setInvoices] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [filteredInvoices, setFilteredInvoices] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const itemsPerPage = 10;
+
+  // Load sample data
+  useEffect(() => {
+    const sampleInvoices = [
+      { លេខ: 1, ឆ្នាំ: "2025", លេខបញ្ជាក់ការប: "001", កាលបរិច្ឆេទ: "11-03-2025", ទឹកប្រាក់: 727000, ស្ថានភាព: "បានបង់" },
+      { លេខ: 2, ឆ្នាំ: "2025", លេខបញ្ជាក់ការប: "002", កាលបរិច្ឆេទ: "12-03-2025", ទឹកប្រាក់: 700000, ស្ថានភាព: "បានបង់" },
+      { លេខ: 3, ឆ្នាំ: "2025", លេខបញ្ជាក់ការប: "003", កាលបរិច្ឆេទ: "13-03-2025", ទឹកប្រាក់: 676000, ស្ថានភាព: "រងចាំ" },
+      { លេខ: 4, ឆ្នាំ: "2025", លេខបញ្ជាក់ការប: "004", កាលបរិច្ឆេទ: "14-03-2025", ទឹកប្រាក់: 476000, ស្ថានភាព: "បានបង់" },
+      { លេខ: 5, ឆ្នាំ: "2025", លេខបញ្ជាក់ការប: "005", កាលបរិច្ឆេទ: "15-03-2025", ទឹកប្រាក់: 183000, ស្ថានភាព: "យឺតយ៉ាវ" },
+      { លេខ: 6, ឆ្នាំ: "2025", លេខបញ្ជាក់ការប: "006", កាលបរិច្ឆេទ: "16-03-2025", ទឹកប្រាក់: 280500, ស្ថានភាព: "បានបង់" },
+      { លេខ: 7, ឆ្នាំ: "2025", លេខបញ្ជាក់ការប: "007", កាលបរិច្ឆេទ: "19-03-2025", ទឹកប្រាក់: 481000, ស្ថានភាព: "រងចាំ" },
+      { លេខ: 8, ឆ្នាំ: "2025", លេខបញ្ជាក់ការប: "008", កាលបរិច្ឆេទ: "21-04-2025", ទឹកប្រាក់: 676700, ស្ថានភាព: "បានបង់" },
+    ];
+
+    const sampleCustomers = [
+      { លេខ: 1, ឈ្មោះ: "ស្រុក មករា", ទូរស័ព្ទ: "012 345 678", អ៊ីមែល: "makara@example.com", ខេត្ត: "ភ្នំពេញ" },
+      { លេខ: 2, ឈ្មោះ: "លី សុផល", ទូរស័ព្ទ: "011 222 333", អ៊ីមែល: "sophal@example.com", ខេត្ត: "សៀមរាប" },
+      { លេខ: 3, ឈ្មោះ: "ចាន់ ដារ៉ា", ទូរស័ព្ទ: "010 444 555", អ៊ីមែល: "dara@example.com", ខេត្ត: "បាត់ដំបង" },
+      { លេខ: 4, ឈ្មោះ: "ពេជ្រ សុខា", ទូរស័ព្ទ: "015 666 777", អ៊ីមែល: "sokha@example.com", ខេត្ត: "កំពង់ចាម" },
+    ];
+
+    setInvoices(sampleInvoices);
+    setCustomers(sampleCustomers);
+    setFilteredInvoices(sampleInvoices);
+  }, []);
+
+  // Search
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = invoices.filter(inv => 
+        inv.លេខ.toString().includes(searchTerm) ||
+        inv.លេខបញ្ជាក់ការប.includes(searchTerm) ||
+        inv.កាលបរិច្ឆេទ.includes(searchTerm)
+      );
+      setFilteredInvoices(filtered);
+    } else {
+      setFilteredInvoices(invoices);
+    }
+  }, [searchTerm, invoices]);
+
+  // Pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredInvoices.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+
+  const formatCurrency = (value) => {
+    return value?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
+
+  const totalRevenue = invoices.reduce((sum, inv) => sum + inv.ទឹកប្រាក់, 0);
+  const paidInvoices = invoices.filter(inv => inv.ស្ថានភាព === "បានបង់").length;
+  const pendingInvoices = invoices.filter(inv => inv.ស្ថានភាព === "រងចាំ").length;
+
+  const handleDelete = (id) => {
+    if (confirm('តើអ្នកពិតជាចង់លុបវិក្កយបត្រនេះមែនទេ?')) {
+      setInvoices(invoices.filter(inv => inv.លេខ !== id));
+    }
+  };
+
+  // Render Home Dashboard
+  const renderHome = () => (
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold text-gray-800">ទំព័រដើម - Dashboard</h2>
+      
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-100 text-sm">វិក្កយបត្រសរុប</p>
+              <p className="text-3xl font-bold mt-2">{invoices.length}</p>
+            </div>
+            <FileText className="w-12 h-12 text-blue-200" />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-100 text-sm">ចំណូលសរុប</p>
+              <p className="text-2xl font-bold mt-2">{formatCurrency(totalRevenue)}៛</p>
+            </div>
+            <DollarSign className="w-12 h-12 text-green-200" />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-purple-100 text-sm">អតិថិជន</p>
+              <p className="text-3xl font-bold mt-2">{customers.length}</p>
+            </div>
+            <Users className="w-12 h-12 text-purple-200" />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-orange-100 text-sm">រងចាំ</p>
+              <p className="text-3xl font-bold mt-2">{pendingInvoices}</p>
+            </div>
+            <Clock className="w-12 h-12 text-orange-200" />
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Invoices */}
+      <div className="bg-white rounded-xl shadow p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">វិក្កយបត្រថ្មីៗ</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left py-3 px-4">លេខ</th>
+                <th className="text-left py-3 px-4">កាលបរិច្ឆេទ</th>
+                <th className="text-left py-3 px-4">ទឹកប្រាក់</th>
+                <th className="text-left py-3 px-4">ស្ថានភាព</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoices.slice(0, 5).map(inv => (
+                <tr key={inv.លេខ} className="border-b hover:bg-gray-50">
+                  <td className="py-3 px-4">#{inv.លេខបញ្ជាក់ការប}</td>
+                  <td className="py-3 px-4">{inv.កាលបរិច្ឆេទ}</td>
+                  <td className="py-3 px-4 font-semibold">{formatCurrency(inv.ទឹកប្រាក់)}៛</td>
+                  <td className="py-3 px-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      inv.ស្ថានភាព === 'បានបង់' ? 'bg-green-100 text-green-800' :
+                      inv.ស្ថានភាព === 'រងចាំ' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {inv.ស្ថានភាព}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render Invoice List
+  const renderInvoices = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-gray-800">វិក្កយបត្រទាំងអស់</h2>
+        <button 
+          onClick={() => setShowAddForm(true)}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2"
+        >
+          <Plus className="w-5 h-5" />
+          បង្កើតថ្មី
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-gray-50 border-b">
+              <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">លេខ</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">ឆ្នាំ</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">លេខបញ្ជាក់ការប</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">កាលបរិច្ឆេទ</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">ទឹកប្រាក់</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">ស្ថានភាព</th>
+              <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase">សកម្មភាព</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {currentItems.map((invoice) => (
+              <tr key={invoice.លេខ} className="hover:bg-gray-50 transition-colors">
+                <td className="px-6 py-4 text-sm text-gray-900">{invoice.លេខ}</td>
+                <td className="px-6 py-4 text-sm text-gray-900">{invoice.ឆ្នាំ}</td>
+                <td className="px-6 py-4 text-sm text-gray-900">{invoice.លេខបញ្ជាក់ការប}</td>
+                <td className="px-6 py-4 text-sm text-gray-900">{invoice.កាលបរិច្ឆេទ}</td>
+                <td className="px-6 py-4 text-sm font-semibold text-gray-900">{formatCurrency(invoice.ទឹកប្រាក់)}៛</td>
+                <td className="px-6 py-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    invoice.ស្ថានភាព === 'បានបង់' ? 'bg-green-100 text-green-800' :
+                    invoice.ស្ថានភាព === 'រងចាំ' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {invoice.ស្ថានភាព}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <button 
+                      onClick={() => setSelectedInvoice(invoice)}
+                      className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button className="p-2 bg-green-500 text-white rounded hover:bg-green-600">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button className="p-2 bg-cyan-500 text-white rounded hover:bg-cyan-600">
+                      <Download className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(invoice.លេខ)}
+                      className="p-2 bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  // Render Customers
+  const renderCustomers = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-gray-800">អតិថិជន</h2>
+        <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+          <Plus className="w-5 h-5" />
+          បន្ថែមអតិថិជន
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {customers.map(customer => (
+          <div key={customer.លេខ} className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                {customer.ឈ្មោះ.charAt(0)}
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-800">{customer.ឈ្មោះ}</h3>
+                <p className="text-sm text-gray-600">{customer.ខេត្ត}</p>
+              </div>
+            </div>
+            <div className="space-y-2 text-sm text-gray-600">
+              <p className="flex items-center gap-2">
+                <span className="font-semibold">📞</span> {customer.ទូរស័ព្ទ}
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="font-semibold">✉️</span> {customer.អ៊ីមែល}
+              </p>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button className="flex-1 bg-blue-100 text-blue-600 py-2 rounded-lg hover:bg-blue-200 transition-all">
+                មើល
+              </button>
+              <button className="flex-1 bg-green-100 text-green-600 py-2 rounded-lg hover:bg-green-200 transition-all">
+                កែសម្រួល
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Render Reports
+  const renderReports = () => (
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold text-gray-800">របាយការណ៍</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-800">ចំណូលប្រចាំខែ</h3>
+            <TrendingUp className="w-8 h-8 text-green-500" />
+          </div>
+          <p className="text-3xl font-bold text-green-600">{formatCurrency(totalRevenue)}៛</p>
+          <p className="text-sm text-gray-600 mt-2">+12.5% ធៀបនឹងខែមុន</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-800">វិក្កយបត្របានបង់</h3>
+            <ShoppingCart className="w-8 h-8 text-blue-500" />
+          </div>
+          <p className="text-3xl font-bold text-blue-600">{paidInvoices}</p>
+          <p className="text-sm text-gray-600 mt-2">ពី {invoices.length} សរុប</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-800">អតិថិជនសកម្ម</h3>
+            <Users className="w-8 h-8 text-purple-500" />
+          </div>
+          <p className="text-3xl font-bold text-purple-600">{customers.length}</p>
+          <p className="text-sm text-gray-600 mt-2">ចុះឈ្មោះថ្មី</p>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">របាយការណ៍លម្អិត</h3>
+        <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+          <p className="text-gray-500">📊 Chart នឹងបង្ហាញនៅទីនេះ</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render History
+  const renderHistory = () => (
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold text-gray-800">ប្រវត្តិប្រតិបត្តិការ</h2>
+      
+      <div className="bg-white rounded-xl shadow">
+        {invoices.map((inv, idx) => (
+          <div key={idx} className="p-4 border-b last:border-b-0 hover:bg-gray-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-800">វិក្កយបត្រ #{inv.លេខបញ្ជាក់ការប}</p>
+                  <p className="text-sm text-gray-600">{inv.កាលបរិច្ឆេទ}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-gray-800">{formatCurrency(inv.ទឹកប្រាក់)}៛</p>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  inv.ស្ថានភាព === 'បានបង់' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {inv.ស្ថានភាព}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Render Settings
+  const renderSettings = () => (
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold text-gray-800">ការកំណត់</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl shadow p-6">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">ព័ត៌មានក្រុមហ៊ុន</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">ឈ្មោះក្រុមហ៊ុន</label>
+              <input type="text" className="w-full px-4 py-2 border rounded-lg" defaultValue="ក្រុមហ៊ុន ABC" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">អាស័យដ្ឋាន</label>
+              <input type="text" className="w-full px-4 py-2 border rounded-lg" defaultValue="ភ្នំពេញ" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">ទូរស័ព្ទ</label>
+              <input type="text" className="w-full px-4 py-2 border rounded-lg" defaultValue="012 345 678" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-6">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">ការកំណត់ប្រព័ន្ធ</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <span className="font-semibold text-gray-700">ភាសា</span>
+              <select className="px-4 py-2 border rounded-lg">
+                <option>ខ្មែរ</option>
+                <option>English</option>
+              </select>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <span className="font-semibold text-gray-700">រូបិយប័ណ្ណ</span>
+              <select className="px-4 py-2 border rounded-lg">
+                <option>រៀល (៛)</option>
+                <option>USD ($)</option>
+              </select>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <span className="font-semibold text-gray-700">Notification</span>
+              <label className="relative inline-block w-12 h-6">
+                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <div className="w-12 h-6 bg-gray-300 peer-checked:bg-blue-600 rounded-full peer transition-all"></div>
+                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full peer-checked:translate-x-6 transition-all"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow p-6">
+        <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-all font-bold">
+          រក្សាទុកការផ្លាស់ប្តូរ
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div className={`${sidebarOpen ? 'w-64' : 'w-0'} bg-gradient-to-b from-blue-900 to-blue-800 text-white transition-all duration-300 overflow-hidden`}>
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+              <FileText className="w-6 h-6 text-blue-900" />
+            </div>
+            <div>
+              <h2 className="font-bold text-lg">ប្រព័ន្ធគ្រប់គ្រង</h2>
+              <p className="text-xs text-blue-200">Invoice System</p>
+            </div>
+          </div>
+
+          <nav className="space-y-2">
+            <button 
+              onClick={() => setActiveMenu('home')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                activeMenu === 'home' ? 'bg-blue-700' : 'hover:bg-blue-700'
+              }`}
+            >
+              <Home className="w-5 h-5" />
+              <span>ទំព័រដើម</span>
+            </button>
+            <button 
+              onClick={() => setActiveMenu('invoices')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                activeMenu === 'invoices' ? 'bg-blue-700' : 'hover:bg-blue-700'
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              <span>វិក្កយបត្រទាំងអស់</span>
+            </button>
+            <button 
+              onClick={() => setActiveMenu('customers')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                activeMenu === 'customers' ? 'bg-blue-700' : 'hover:bg-blue-700'
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              <span>អតិថិជន</span>
+            </button>
+            <button 
+              onClick={() => setActiveMenu('reports')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                activeMenu === 'reports' ? 'bg-blue-700' : 'hover:bg-blue-700'
+              }`}
+            >
+              <BarChart3 className="w-5 h-5" />
+              <span>របាយការណ៍</span>
+            </button>
+            <button 
+              onClick={() => setActiveMenu('history')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                activeMenu === 'history' ? 'bg-blue-700' : 'hover:bg-blue-700'
+              }`}
+            >
+              <Clock className="w-5 h-5" />
+              <span>ប្រវត្តិ</span>
+            </button>
+            <button 
+              onClick={() => setActiveMenu('settings')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                activeMenu === 'settings' ? 'bg-blue-700' : 'hover:bg-blue-700'
+              }`}
+            >
+              <Settings className="w-5 h-5" />
+              <span>ការកំណត់</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+              <h1 className="text-2xl font-bold text-gray-800">ប្រព័ន្ធគ្រប់គ្រងវិក្កយបត្រ: ទីផ្សារ</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">English | ខ្មែរ</span>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                  <User className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        {activeMenu === 'invoices' && (
+          <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="ស្វែងរក"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-auto p-6">
+          {activeMenu === 'home' && renderHome()}
+          {activeMenu === 'invoices' && renderInvoices()}
+          {activeMenu === 'customers' && renderCustomers()}
+          {activeMenu === 'reports' && renderReports()}
+          {activeMenu === 'history' && renderHistory()}
+          {activeMenu === 'settings' && renderSettings()}
+
+          {/* Pagination for invoices */}
+          {activeMenu === 'invoices' && (
+            <div className="mt-6 flex items-center justify-center gap-2">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
+              >
+                &lt;
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-4 py-2 rounded ${
+                    currentPage === i + 1
+                      ? 'bg-blue-600 text-white'
+                      : 'border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
+              >
+                &gt;
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Invoice Detail Modal */}
+      {selectedInvoice && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">លម្អិតវិក្កយបត្រ</h2>
+              <button 
+                onClick={() => setSelectedInvoice(null)}
+                className="text-gray-400 hover:text-gray-600 text-3xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">លេខវិក្កយបត្រ</p>
+                  <p className="text-xl font-bold text-gray-900">#{selectedInvoice.លេខ}</p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">លេខបញ្ជាក់ការប</p>
+                  <p className="text-xl font-bold text-gray-900">{selectedInvoice.លេខបញ្ជាក់ការប}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">ឆ្នាំ</p>
+                  <p className="text-lg font-semibold text-gray-900">{selectedInvoice.ឆ្នាំ}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">កាលបរិច្ឆេទ</p>
+                  <p className="text-lg font-semibold text-gray-900">{selectedInvoice.កាលបរិច្ឆេទ}</p>
+                </div>
+              </div>
+
+              <div className="bg-green-50 p-6 rounded-lg border-2 border-green-200">
+                <p className="text-sm text-gray-600 mb-2">ទឹកប្រាក់សរុប</p>
+                <p className="text-3xl font-bold text-green-600">{formatCurrency(selectedInvoice.ទឹកប្រាក់)} ៛</p>
+              </div>
+
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600 mb-1">ស្ថានភាព</p>
+                <span className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
+                  selectedInvoice.ស្ថានភាព === 'បានបង់' ? 'bg-green-100 text-green-800' :
+                  selectedInvoice.ស្ថានភាព === 'រងចាំ' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {selectedInvoice.ស្ថានភាព}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-4">
+              <button className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                <Download className="w-5 h-5" />
+                ទាញយក PDF
+              </button>
+              <button 
+                onClick={() => setSelectedInvoice(null)}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition-all"
+              >
+                បិទ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default InvoiceSystem;
